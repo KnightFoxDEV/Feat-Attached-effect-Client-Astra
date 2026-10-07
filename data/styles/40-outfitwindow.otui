@@ -109,7 +109,7 @@ SelectionButton < UIButton
     font: $var-cip-font
 
 OutfitWindow < MainWindow
-  size: 756 565
+  size: 756 590
   text: Customise Character
   color: #929292
   padding-top: 0
@@ -605,7 +605,7 @@ OutfitWindow < MainWindow
 
   WindowCyclopedia
     id: configure
-    size: 145 260
+    size: 145 190
     !text: tr('Configure')
     font: Verdana Bold-11px
     color: #909090
@@ -771,7 +771,7 @@ OutfitWindow < MainWindow
 
   WindowCyclopedia
     id: appearance
-    size: 327 260
+    size: 327 327
     !text: tr('Change Appearance')
     font: Verdana Bold-11px
     color: #909090
@@ -928,7 +928,7 @@ OutfitWindow < MainWindow
         color: #707070
 
     FlatPanel
-      id: familiar
+      id: wings
       size: 230 20
       image-source: /game_cyclopedia/images/ui/panel-background
       padding: 1 1 1 1
@@ -938,12 +938,21 @@ OutfitWindow < MainWindow
       margin-left: 90
       font: $var-cip-font
       color: $var-text-cip-color
+      UIWidget
+        id: name
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.horizontalCenter: parent.horizontalCenter
+        font: $var-cip-font
+        color: $var-text-cip-color
+        text-auto-resize: true
+        background-color: alpha
+        phantom: true
 
     CheckBoxCircle
-      id: familiarCheck
+      id: wingsCheck
       size: 12 12
       font: Verdana Bold-11px
-      text: Familiar:
+      text: Wings:
       text-offset: 16 -3
       text-auto-resize: true
       color: #c0c0c0
@@ -960,13 +969,127 @@ OutfitWindow < MainWindow
         color: #707070
 
     FlatPanel
-      id: preset
+      id: effects
       size: 230 20
       image-source: /game_cyclopedia/images/ui/panel-background
       padding: 1 1 1 1
       anchors.top: parent.top
       anchors.left: parent.left
       margin-top: 110
+      margin-left: 90
+      font: $var-cip-font
+      color: $var-text-cip-color
+      UIWidget
+        id: name
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.horizontalCenter: parent.horizontalCenter
+        font: $var-cip-font
+        color: $var-text-cip-color
+        text-auto-resize: true
+        background-color: alpha
+        phantom: true
+
+    CheckBoxCircle
+      id: effectsCheck
+      size: 12 12
+      font: Verdana Bold-11px
+      text: Effects:
+      text-offset: 16 -3
+      text-auto-resize: true
+      color: #c0c0c0
+      image-source: /images/ui/checkboxcircle
+      image-clip: 0 0 12 12
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 114
+      margin-left: 7
+      change-cursor-image: false
+      $hover !disabled:
+        color: $var-text-cip-color
+      $disabled:
+        color: #707070
+
+    FlatPanel
+      id: shader
+      size: 230 20
+      image-source: /game_cyclopedia/images/ui/panel-background
+      padding: 1 1 1 1
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 132
+      margin-left: 90
+      font: $var-cip-font
+      color: $var-text-cip-color
+      UIWidget
+        id: name
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.horizontalCenter: parent.horizontalCenter
+        font: $var-cip-font
+        color: $var-text-cip-color
+        text-auto-resize: true
+        background-color: alpha
+        phantom: true
+
+    CheckBoxCircle
+      id: shaderCheck
+      size: 12 12
+      font: Verdana Bold-11px
+      text: Shader:
+      text-offset: 16 -3
+      text-auto-resize: true
+      color: #c0c0c0
+      image-source: /images/ui/checkboxcircle
+      image-clip: 0 0 12 12
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 136
+      margin-left: 7
+      change-cursor-image: false
+      $hover !disabled:
+        color: $var-text-cip-color
+      $disabled:
+        color: #707070
+
+    FlatPanel
+      id: familiar
+      size: 230 20
+      image-source: /game_cyclopedia/images/ui/panel-background
+      padding: 1 1 1 1
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 154
+      margin-left: 90
+      font: $var-cip-font
+      color: $var-text-cip-color
+
+    CheckBoxCircle
+      id: familiarCheck
+      size: 12 12
+      font: Verdana Bold-11px
+      text: Familiar:
+      text-offset: 16 -3
+      text-auto-resize: true
+      color: #c0c0c0
+      image-source: /images/ui/checkboxcircle
+      image-clip: 0 0 12 12
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 158
+      margin-left: 7
+      change-cursor-image: false
+      $hover !disabled:
+        color: $var-text-cip-color
+      $disabled:
+        color: #707070
+
+    FlatPanel
+      id: preset
+      size: 230 20
+      image-source: /game_cyclopedia/images/ui/panel-background
+      padding: 1 1 1 1
+      anchors.top: parent.top
+      anchors.left: parent.left
+      margin-top: 176
       margin-left: 90
       font: $var-cip-font
       color: $var-text-cip-color
@@ -983,7 +1106,7 @@ OutfitWindow < MainWindow
       image-clip: 0 0 12 12
       anchors.top: parent.top
       anchors.left: parent.left
-      margin-top: 114
+      margin-top: 180
       margin-left: 7
       change-cursor-image: false
       $hover !disabled:
@@ -1182,8 +1305,3 @@ OutfitWindow < MainWindow
     $disabled:
       image-clip: 0 40 43 20
       change-cursor-image: false
-
-
-
-
-

@@ -71,6 +71,7 @@ namespace Proto {
         GameServerExtendedOpcode            = 50,
         GameServerAttachedEffect            = 52, // U32 creature ID, U16 registered effect ID
         GameServerDetachEffect              = 53, // U32 creature ID, U16 registered effect ID
+        GameServerCreatureShader            = 54, // U32 creature ID, string shader name
         GameServerProgressBar               = 59,
         // Reserved for native ZoneId weather negotiated by GameZoneWeather.
         GameServerZoneWeather               = 60,

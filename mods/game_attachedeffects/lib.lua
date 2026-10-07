@@ -6,7 +6,10 @@ local function configure(effect, config)
     effect:setSpeed(config.speed or 1)
     effect:setOpacity(config.opacity or 1)
     effect:setCanDrawOnUI(config.drawOnUI ~= false)
-    effect:setFollowOwner(config.followOwner == true)
+    -- Attached visuals should use the creature's interpolated walking position
+    -- by default; otherwise they stay on the previous tile until a step ends.
+    -- Set followOwner = false only for effects that intentionally lag at the tile.
+    effect:setFollowOwner(config.followOwner ~= false)
     effect:setHideOwner(config.hideOwner == true)
     effect:setTransform(config.transform == true)
     effect:setDisableWalkAnimation(config.disableWalkAnimation == true)

@@ -51,6 +51,9 @@ public:
     void setFamiliar(int familiar) { m_familiar = familiar; }
     void setWings(int wings) { m_wings = wings; }
     void setAura(int aura) { m_aura = aura; }
+    void setAttachedWing(int id) { m_attachedWing = id; }
+    void setAttachedAura(int id) { m_attachedAura = id; }
+    void setAttachedEffect(int id) { m_attachedEffect = id; }
     void setCategory(ThingCategory category) { m_category = category; }
     void setShader(const std::string& shader) { m_shader = shader; }
     void setHealthBar(uint8 id) { m_healthBar = id; }
@@ -72,6 +75,9 @@ public:
     int getFamiliar() const { return m_familiar; }
     int getWings() const { return m_wings; }
     int getAura() const { return m_aura; }
+    int getAttachedWing() const { return m_attachedWing; }
+    int getAttachedAura() const { return m_attachedAura; }
+    int getAttachedEffect() const { return m_attachedEffect; }
     ThingCategory getCategory() const { return m_category; }
     std::string getShader() const { return m_shader; }
     int getHealthBar() const { return m_healthBar; }
@@ -81,6 +87,7 @@ private:
     ThingCategory m_category;
     int m_id, m_auxId, m_head, m_body, m_legs, m_feet, m_addons, m_mount = 0, m_familiar = 0, m_wings = 0, m_aura = 0;
     int m_healthBar = 0, m_manaBar = 0;
+    int m_attachedWing = 0, m_attachedAura = 0, m_attachedEffect = 0;
     std::string m_shader;
     bool m_center = false;
 };

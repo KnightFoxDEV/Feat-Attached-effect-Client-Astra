@@ -56,6 +56,14 @@ int push_luavalue(const Outfit& outfit)
         g_lua.pushInteger(outfit.getAura());
         g_lua.setField("aura");
     }
+    if (g_game.getFeature(Otc::GameAttachedEffectOutfit)) {
+        g_lua.pushInteger(outfit.getAttachedWing());
+        g_lua.setField("attachedWing");
+        g_lua.pushInteger(outfit.getAttachedAura());
+        g_lua.setField("attachedAura");
+        g_lua.pushInteger(outfit.getAttachedEffect());
+        g_lua.setField("attachedEffect");
+    }
     if (g_game.getFeature(Otc::GameOutfitShaders)) {
         g_lua.pushString(outfit.getShader());
         g_lua.setField("shader");
@@ -103,6 +111,14 @@ bool luavalue_cast(int index, Outfit& outfit)
             outfit.setWings(g_lua.popInteger());
             g_lua.getField("aura", index);
             outfit.setAura(g_lua.popInteger());
+        }
+        if (g_game.getFeature(Otc::GameAttachedEffectOutfit)) {
+            g_lua.getField("attachedWing", index);
+            outfit.setAttachedWing(g_lua.popInteger());
+            g_lua.getField("attachedAura", index);
+            outfit.setAttachedAura(g_lua.popInteger());
+            g_lua.getField("attachedEffect", index);
+            outfit.setAttachedEffect(g_lua.popInteger());
         }
         //if (g_game.getFeature(Otc::GameOutfitShaders)) {
             g_lua.getField("shader", index);

@@ -143,6 +143,12 @@ void Creature::draw(const Point& dest, bool animate, LightView* lightView)
 
     const int sprSize = g_sprites.spriteSize();
     Point jumpOffset = Point(m_jumpOffset.x, m_jumpOffset.y);
+    if (m_bounceHeight > 0 && m_bounceSpeed > 0) {
+        const auto minHeight = m_bounceMinimum * g_sprites.getOffsetFactor();
+        const auto height = m_bounceHeight * g_sprites.getOffsetFactor();
+        const auto step = static_cast<int>(m_bounceTimer.ticksElapsed() / (m_bounceSpeed / 100.f));
+        jumpOffset.y += minHeight + (height - std::abs(height - step % static_cast<int>(height * 2)));
+    }
     const Point logicalDisplacement = usesNegativeDisplacement() ? Point() : getDisplacement();
     Point creatureCenter = dest - jumpOffset + m_walkOffset - logicalDisplacement + Point(sprSize / 2, sprSize / 2);
     drawBottomWidgets(creatureCenter, m_walking ? m_walkDirection : m_direction);
@@ -488,6 +494,15 @@ void Creature::jump(int height, int duration)
     m_jumpDuration = duration;
 
     updateJump();
+}
+
+void Creature::setBounce(float minimum, float height, uint32_t period)
+{
+    m_bounceMinimum = std::max(0.f, minimum);
+    m_bounceHeight = std::max(0.f, height);
+    m_bounceSpeed = period;
+    if (m_bounceSpeed > 0)
+        m_bounceTimer.restart();
 }
 
 void Creature::updateJump()

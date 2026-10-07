@@ -31,7 +31,11 @@ function updateFeatures(version)
     g_game.enableFeature(GameMessageSizeCheck)
     g_game.enableFeature(GameTileAddThingWithStackpos)
     g_game.enableFeature(GameCreatureEmblems)
-
+    -- Astra negotiates these separately from the attached-effect catalog.
+    g_game.enableFeature(GameWingsAndAura)
+    g_game.enableFeature(GameOutfitShaders)
+	g_game.enableFeature(GameMapDrawGroundFirst)
+	g_game.enableFeature(GameWingsAurasEffectsShader)
     -- TFS 1.8 8.60 Astra extensions.
     g_game.enableFeature(GameAttackSeq)
     g_game.enableFeature(GameIngameStoreHighlights)

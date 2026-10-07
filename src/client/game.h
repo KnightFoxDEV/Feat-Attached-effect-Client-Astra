@@ -140,6 +140,9 @@ protected:
                                  const std::vector<std::tuple<int, std::string>>& familiarList,
                                  const std::vector<std::tuple<int, std::string>>& wingList,
                                  const std::vector<std::tuple<int, std::string>>& auraList,
+                                 const std::vector<std::tuple<int, std::string>>& attachedWingList,
+                                 const std::vector<std::tuple<int, std::string>>& attachedAuraList,
+                                 const std::vector<std::tuple<int, std::string>>& attachedVisualEffectList,
                                  const std::vector<std::tuple<int, std::string>>& shaderList,
                                  const std::vector<std::tuple<int, std::string>>& healthBarList,
                                  const std::vector<std::tuple<int, std::string>>& manaBarList);

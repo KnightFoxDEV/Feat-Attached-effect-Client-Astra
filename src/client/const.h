@@ -512,7 +512,8 @@ namespace Otc
         GameAstraBestiaryBannerCreatureData = 151,
         GameAstraExtendedSpellIds = 152,
 
-        LastGameFeature = 153
+        GameAttachedEffectOutfit = 153,
+        LastGameFeature = 154
     };
 
     enum PathFindResult {

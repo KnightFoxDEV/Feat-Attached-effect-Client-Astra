@@ -701,6 +701,7 @@ void Client::registerLuaFunctions()
     g_lua.bindClassMemberFunction<Creature>("canBeSeen", &Creature::canBeSeen);
     g_lua.bindClassMemberFunction<Creature>("canShoot", &Creature::canShoot);
     g_lua.bindClassMemberFunction<Creature>("jump", &Creature::jump);
+    g_lua.bindClassMemberFunction<Creature>("setBounce", &Creature::setBounce);
     g_lua.bindClassMemberFunction<Creature>("getPrewalkingPosition", &Creature::getPrewalkingPosition);
     g_lua.bindClassMemberFunction<Creature>("setInformationColor", &Creature::setInformationColor);
     g_lua.bindClassMemberFunction<Creature>("resetInformationColor", &Creature::resetInformationColor);

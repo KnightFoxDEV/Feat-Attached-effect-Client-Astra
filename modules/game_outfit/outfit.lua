@@ -1,4 +1,5 @@
 local window = nil
+local configure = nil
 
 local appearanceGroup = nil
 local colorModeGroup = nil
@@ -44,18 +45,83 @@ local ServerData = {
   familiars = {},
   wings = {},
   auras = {},
+  attachedWings = {},
+  attachedAuras = {},
+  attachedVisualEffects = {},
   shaders = {},
   healthBars = {},
   manaBars = {}
 }
+
+local function createFallbackConfigurePanel(parent)
+  local function createWidget(widgetType, owner, id, width, height, left, top, text)
+    local widget = g_ui.createWidget(widgetType, owner)
+    widget:setId(id)
+    widget:setSize({ width = width, height = height })
+    widget:addAnchor(AnchorTop, "parent", AnchorTop)
+    widget:addAnchor(AnchorLeft, "parent", AnchorLeft)
+    widget:setMarginLeft(left)
+    widget:setMarginTop(top)
+    if text then
+      widget:setText(text)
+    end
+    return widget
+  end
+
+  local panel = createWidget("Panel", parent, "configure", 145, 190, 16, 255)
+  local function addCheck(containerId, checkId, label, top)
+    local container = createWidget("Panel", panel, containerId, 131, 22, 7, top)
+    local check = createWidget("CheckBox", container, checkId, 120, 18, 4, 2, label)
+    return check
+  end
+
+  addCheck("addon1", "addon1Check", tr("Addon 1"), 22)
+  addCheck("addon2", "addon2Check", tr("Addon 2"), 49)
+  addCheck("aura", "auraCheck", tr("Aura"), 76)
+  addCheck("mount", "mountCheck", tr("Mount"), 103)
+  addCheck("randommount", "randomCheck", tr("Random Mount"), 130)
+
+  return panel
+end
 
 local AppearanceData = {
   "preset",
   "outfit",
   "mount",
   "familiar",
-  "aura"
+  "aura",
+  "wings",
+  "effects",
+  "shader"
 }
+
+local function ensureAppearanceCategory(id, label, top)
+  local appearance = window.appearance
+  if appearance:getChildById(id .. "Check") then
+    return
+  end
+  local row = g_ui.createWidget("FlatPanel", appearance)
+  row:setId(id)
+  row:setSize({ width = 230, height = 20 })
+  row:addAnchor(AnchorTop, "parent", AnchorTop)
+  row:addAnchor(AnchorLeft, "parent", AnchorLeft)
+  row:setMarginTop(top)
+  row:setMarginLeft(90)
+  local name = g_ui.createWidget("UIWidget", row)
+  name:setId("name")
+  name:addAnchor(AnchorVerticalCenter, "parent", AnchorVerticalCenter)
+  name:addAnchor(AnchorHorizontalCenter, "parent", AnchorHorizontalCenter)
+  name:setText("None")
+  local check = g_ui.createWidget("CheckBoxCircle", appearance)
+  check:setId(id .. "Check")
+  check:setText(label .. ":")
+  check:setSize({ width = 12, height = 12 })
+  check:addAnchor(AnchorTop, "parent", AnchorTop)
+  check:addAnchor(AnchorLeft, "parent", AnchorLeft)
+  check:setMarginTop(top + 4)
+  check:setMarginLeft(7)
+  check:setEnabled(false)
+end
 
 local function normalizeStoreTryOn(data)
   if type(data) ~= "table" then
@@ -233,7 +299,8 @@ function onShowOutfitCheckChange(checkBox, checked)
   updatePreview(not checked)
 end
 
-function create(currentOutfit, outfitList, mountList, familiarList, wingList, auraList, shaderList, healthBarList, manaBarList)
+function create(currentOutfit, outfitList, mountList, familiarList, wingList, auraList,
+                attachedWingList, attachedAuraList, attachedVisualEffectList, shaderList, healthBarList, manaBarList)
   if ignoreNextOutfitWindow and g_clock.millis() < ignoreNextOutfitWindow + 1000 then
     return
   end
@@ -254,6 +321,10 @@ function create(currentOutfit, outfitList, mountList, familiarList, wingList, au
   currentOutfit.aura = tonumber(currentOutfit.aura) or 0
   currentOutfit.auraCategory = tonumber(currentOutfit.auraCategory) or 0
   currentOutfit.auraId = tonumber(currentOutfit.auraId) or 0
+  currentOutfit.attachedWing = tonumber(currentOutfit.attachedWing) or 0
+  currentOutfit.attachedAura = tonumber(currentOutfit.attachedAura) or 0
+  currentOutfit.attachedEffect = tonumber(currentOutfit.attachedEffect) or 0
+  currentOutfit.shader = tostring(currentOutfit.shader or "")
 
   if window then
     destroy()
@@ -276,12 +347,29 @@ function create(currentOutfit, outfitList, mountList, familiarList, wingList, au
     familiars = familiarList,
     wings = wingList,
     auras = auraList,
+    attachedWings = attachedWingList or {},
+    attachedAuras = attachedAuraList or {},
+    attachedVisualEffects = attachedVisualEffectList or {},
     shaders = shaderList,
     healthBars = healthBarList,
     manaBars = manaBarList
   }
 
   window = g_ui.displayUI("outfitwindow")
+  ensureAppearanceCategory("wings", "Wings", 88)
+  ensureAppearanceCategory("effects", "Effects", 110)
+  ensureAppearanceCategory("shader", "Shader", 132)
+  -- Older Astra layouts can still open the window; extend the appearance panel
+  -- so the added rows remain visible without requiring a matching packaged OTUI.
+  if window.appearance:getHeight() < 174 then
+    window.appearance:setHeight(196)
+  end
+  configure = window:getChildById("configure")
+  if not configure then
+    g_logger.warning("Outfit window layout has no 'configure' panel; creating a compatible panel.")
+    configure = createFallbackConfigurePanel(window)
+    window:setSize({ width = 756, height = 590 })
+  end
   g_client.setInputLockWidget(window)
 
   for _, appKey in ipairs(AppearanceData) do
@@ -306,42 +394,46 @@ function create(currentOutfit, outfitList, mountList, familiarList, wingList, au
   if g_game.getFeature(GamePlayerMounts) then
     local isMount = g_game.getLocalPlayer():isMounted()
     if isMount then
-      window.configure.mount.mountCheck:setEnabled(true)
-      window.configure.mount.mountCheck:setChecked(true)
+      configure.mount.mountCheck:setEnabled(true)
+      configure.mount.mountCheck:setChecked(true)
     else
-      window.configure.mount.mountCheck:setEnabled(#mountList > 0)
-      window.configure.mount.mountCheck:setChecked(isMount and currentOutfit.mount > 0)
+      configure.mount.mountCheck:setEnabled(#mountList > 0)
+      configure.mount.mountCheck:setChecked(isMount and currentOutfit.mount > 0)
     end
   end
 
   if currentOutfit.addons == 3 then
-    window.configure.addon1.addon1Check:setChecked(true)
-    window.configure.addon2.addon2Check:setChecked(true)
+    configure.addon1.addon1Check:setChecked(true)
+    configure.addon2.addon2Check:setChecked(true)
   elseif currentOutfit.addons == 2 then
-    window.configure.addon1.addon1Check:setChecked(false)
-    window.configure.addon2.addon2Check:setChecked(true)
+    configure.addon1.addon1Check:setChecked(false)
+    configure.addon2.addon2Check:setChecked(true)
   elseif currentOutfit.addons == 1 then
-    window.configure.addon1.addon1Check:setChecked(true)
-    window.configure.addon2.addon2Check:setChecked(false)
+    configure.addon1.addon1Check:setChecked(true)
+    configure.addon2.addon2Check:setChecked(false)
   end
-  window.configure.addon1.addon1Check.onCheckChange = onAddonChange
-  window.configure.addon2.addon2Check.onCheckChange = onAddonChange
+  configure.addon1.addon1Check.onCheckChange = onAddonChange
+  configure.addon2.addon2Check.onCheckChange = onAddonChange
+  configure.aura.auraCheck.onCheckChange = function()
+    updatePreview()
+  end
 
-  window.configure.randommount.randomCheck:setChecked(false)
+  configure.randommount.randomCheck:setChecked(false)
   globalRandomMount = false
 
-  window.configure.randommount.randomCheck.onCheckChange = onRandomMountChange
+  configure.randommount.randomCheck.onCheckChange = onRandomMountChange
 
   configureAddons(currentOutfit.addons)
+
   local storeTryOn = consumeStoreTryOn()
 
   movementCheck = window.preview.movement.movementCheck
   showFloorCheck = window.preview.showfloor.showfloorCheck
   showOutfitCheck = window.preview.showoutfit.showoutfitCheck
-  showMountCheck = window.configure.mount.mountCheck
+  showMountCheck = configure.mount.mountCheck
   showFamiliarCheck = window.preview.showfamiliar.showfamiliarCheck
   showAuraCheck = window.preview.showAura.showAuraCheck
-  auraCheck = window.configure.aura.auraCheck
+  auraCheck = configure.aura.auraCheck
 
   showOutfitCheck.onCheckChange = onShowOutfitCheckChange
   showMountCheck.onCheckChange = onMountCheckChange
@@ -368,11 +460,30 @@ function create(currentOutfit, outfitList, mountList, familiarList, wingList, au
     window.appearance.auraCheck:setEnabled(true)
   end
 
+  local attachedOutfitFeature = g_game.getFeature(GameAttachedEffectOutfit)
+  local categories = {
+    { id = "aura", options = attachedOutfitFeature and ServerData.attachedAuras or auraList },
+    { id = "wings", options = attachedOutfitFeature and ServerData.attachedWings or wingList },
+    { id = "effects", options = attachedOutfitFeature and ServerData.attachedVisualEffects or {} },
+    { id = "shader", options = g_game.getFeature(GameOutfitShaders) and ServerData.shaders or {} }
+  }
+  for _, category in ipairs(categories) do
+    local available = #category.options > 0
+    local row = window.appearance:getChildById(category.id)
+    local check = window.appearance:getChildById(category.id .. "Check")
+    if row then row:setVisible(available) end
+    if check then
+      check:setEnabled(available)
+      check:setVisible(available)
+    end
+  end
+  showAuraCheck:setEnabled(#auraList > 0 or (attachedOutfitFeature and #ServerData.attachedAuras > 0))
+
   showOutfitCheck:setChecked(true)
   showMountCheck:setChecked(currentOutfit.mount > 0)
   showFamiliarCheck:setChecked(false)
-  showAuraCheck:setChecked(currentOutfit.aura > 0)
-  window.configure.aura.auraCheck:setChecked(currentOutfit.aura > 0)
+  showAuraCheck:setChecked(currentOutfit.aura > 0 or currentOutfit.attachedAura > 0)
+  configure.aura.auraCheck:setChecked(currentOutfit.aura > 0)
   local storeTryOnAppearance = applyStoreTryOn(storeTryOn)
 
   colorBoxGroup = UIRadioGroup.create()
@@ -403,6 +514,9 @@ function create(currentOutfit, outfitList, mountList, familiarList, wingList, au
   appearanceGroup:addWidget(window.appearance.mountCheck)
   appearanceGroup:addWidget(window.appearance.familiarCheck)
   appearanceGroup:addWidget(window.appearance.auraCheck)
+  appearanceGroup:addWidget(window.appearance.wingsCheck)
+  appearanceGroup:addWidget(window.appearance.effectsCheck)
+  appearanceGroup:addWidget(window.appearance.shaderCheck)
 
   appearanceGroup.onSelectionChange = onAppearanceChange
 
@@ -418,7 +532,8 @@ function create(currentOutfit, outfitList, mountList, familiarList, wingList, au
   updatePreview()
   updateAppearanceTexts(currentOutfit)
 
-  if not table.empty(ServerData.auras) then
+  if not table.empty(ServerData.auras) and
+      (not g_game.getFeature(GameAttachedEffectOutfit) or table.empty(ServerData.attachedAuras)) then
     if currentOutfit.auraId == 0 then
       local data = ServerData.auras[1]
       currentOutfit.aura = data[3]
@@ -437,6 +552,7 @@ function destroy()
     g_client.setInputLockWidget()
     window:destroy()
     window = nil
+    configure = nil
 
     movementCheck = nil
     showFloorCheck = nil
@@ -467,6 +583,9 @@ function destroy()
       familiars = {},
       wings = {},
       auras = {},
+      attachedWings = {},
+      attachedAuras = {},
+      attachedVisualEffects = {},
       shaders = {},
       healthBars = {},
       manaBars = {},
@@ -480,25 +599,25 @@ end
 function configureAddons(addons)
   local hasAddon1 = addons == 1 or addons == 3
   local hasAddon2 = addons == 2 or addons == 3
-  window.configure.addon1.addon1Check:setEnabled(hasAddon1)
-  window.configure.addon2.addon2Check:setEnabled(hasAddon2)
+  configure.addon1.addon1Check:setEnabled(hasAddon1)
+  configure.addon2.addon2Check:setEnabled(hasAddon2)
 
-  window.configure.addon1.addon1Check.onCheckChange = nil
-  window.configure.addon2.addon2Check.onCheckChange = nil
-  window.configure.addon1.addon1Check:setChecked(false)
-  window.configure.addon2.addon2Check:setChecked(false)
+  configure.addon1.addon1Check.onCheckChange = nil
+  configure.addon2.addon2Check.onCheckChange = nil
+  configure.addon1.addon1Check:setChecked(false)
+  configure.addon2.addon2Check:setChecked(false)
   if tempOutfit.addons == 3 then
-    window.configure.addon1.addon1Check:setChecked(true)
-    window.configure.addon2.addon2Check:setChecked(true)
+    configure.addon1.addon1Check:setChecked(true)
+    configure.addon2.addon2Check:setChecked(true)
   elseif tempOutfit.addons == 2 then
-    window.configure.addon1.addon1Check:setChecked(false)
-    window.configure.addon2.addon2Check:setChecked(true)
+    configure.addon1.addon1Check:setChecked(false)
+    configure.addon2.addon2Check:setChecked(true)
   elseif tempOutfit.addons == 1 then
-    window.configure.addon1.addon1Check:setChecked(true)
-    window.configure.addon2.addon2Check:setChecked(false)
+    configure.addon1.addon1Check:setChecked(true)
+    configure.addon2.addon2Check:setChecked(false)
   end
-  window.configure.addon1.addon1Check.onCheckChange = onAddonChange
-  window.configure.addon2.addon2Check.onCheckChange = onAddonChange
+  configure.addon1.addon1Check.onCheckChange = onAddonChange
+  configure.addon2.addon2Check.onCheckChange = onAddonChange
 end
 
 function newPreset()
@@ -506,14 +625,18 @@ function newPreset()
   outfitPreset[#outfitPreset + 1] = {
     ["mount"] = {
       ["color"] = { ["detail"] = tempOutfit.mountFeet, ["head"] = tempOutfit.mountHead, ["legs"] = tempOutfit.mountLegs, ["torso"] = tempOutfit.mountBody},
-      ["id"] = window.configure.mount.mountCheck:isChecked() and tempOutfit.mount or 0
+      ["id"] = configure.mount.mountCheck:isChecked() and tempOutfit.mount or 0
     },
     ["name"] = "Preset",
     ["outfit"] = {
       ["color"] = { ["detail"] = tempOutfit.feet, ["head"] = tempOutfit.head, ["legs"] = tempOutfit.legs, ["torso"] = tempOutfit.body},
       ["id"] = tempOutfit.type,
-      ["firstAddOn"] = window.configure.addon1.addon1Check:isChecked(),
-      ["secondAddOn"] = window.configure.addon2.addon2Check:isChecked(),
+      ["firstAddOn"] = configure.addon1.addon1Check:isChecked(),
+      ["secondAddOn"] = configure.addon2.addon2Check:isChecked(),
+      ["attachedWing"] = tempOutfit.attachedWing or 0,
+      ["attachedAura"] = tempOutfit.attachedAura or 0,
+      ["attachedEffect"] = tempOutfit.attachedEffect or 0,
+      ["shader"] = tempOutfit.shader or "",
     },
     ["summon"] = { ["id"] = showFamiliarCheck:isChecked() and tempOutfit.familiar or 0}
   }
@@ -582,8 +705,80 @@ function onAppearanceChange(widget, selectedWidget)
   elseif id == "familiarCheck" then
     showFamiliars()
   elseif id == "auraCheck" then
-    showAuras()
+    if g_game.getFeature(GameAttachedEffectOutfit) and #ServerData.attachedAuras > 0 then
+      showAttachedOptions("aura")
+    else
+      showAuras()
+    end
+  elseif id == "wingsCheck" then
+    showAttachedOptions("wings")
+  elseif id == "effectsCheck" then
+    showAttachedOptions("effects")
+  elseif id == "shaderCheck" then
+    showAttachedOptions("shader")
   end
+end
+
+local attachedCategory = {
+  aura = { list = "attachedAuras", field = "attachedAura", label = "aura" },
+  wings = { list = "attachedWings", field = "attachedWing", label = "wings" },
+  effects = { list = "attachedVisualEffects", field = "attachedEffect", label = "effects" },
+  shader = { list = "shaders", field = "shader", label = "shader" }
+}
+
+function showAttachedOptions(category)
+  local config = attachedCategory[category]
+  if not config then return end
+  onHidePresetWindow()
+  cancelPopulate()
+  window.ScrollBar.selectionList:destroyChildren()
+  window.filter_outfits.onlyCheck:setEnabled(false)
+  window.appearance.grayHover:setVisible(false)
+  local list = window.ScrollBar.selectionList
+  list.onChildFocusChange = function(_, focusedChild)
+    if not focusedChild then return end
+    local selected = focusedChild.optionValue
+    if category == "shader" then
+      tempOutfit.shader = tostring(selected or "")
+    else
+      tempOutfit[config.field] = tonumber(selected) or 0
+      if category == "aura" then
+        tempOutfit.aura = 0
+        tempOutfit.auraCategory = 0
+        tempOutfit.auraId = 0
+      end
+    end
+    updateAppearanceText(config.label, focusedChild.name:getText())
+    updatePreview()
+  end
+  list:show()
+
+  local current = category == "shader" and (tempOutfit.shader or "") or (tonumber(tempOutfit[config.field]) or 0)
+  local none = g_ui.createWidget("SelectionButton", list)
+  none:setId("attached-none-" .. category)
+  none.optionValue = category == "shader" and "" or 0
+  none.outfit:setOutfit(tempOutfit)
+  none.outfit:setCenter(true)
+  none.name:setText(tr("None"))
+  local options = ServerData[config.list] or {}
+  for _, option in ipairs(options) do
+    local button = g_ui.createWidget("SelectionButton", list)
+    button:setId("attached-" .. category .. "-" .. tostring(option[1]))
+    button.optionValue = category == "shader" and tostring(option[2]) or tonumber(option[1])
+    button.outfit:setOutfit(tempOutfit)
+    button.outfit:setCenter(true)
+    button.name:setText(tostring(option[2] or option[1]))
+    if category == "shader" then
+      local shaderOutfit = table.copy(button.outfit:getOutfit())
+      shaderOutfit.shader = button.optionValue
+      button.outfit:setOutfit(shaderOutfit)
+    else
+      local effect = g_attachedEffects.getById(button.optionValue)
+      if effect then button.outfit:getCreature():attachEffect(effect) end
+    end
+    if button.optionValue == current then none = button end
+  end
+  none:focus()
 end
 
 function onHidePresetWindow()
@@ -950,7 +1145,9 @@ function onPresetSelect(widget)
     showFamiliarCheck:setChecked(false)
   end
 
-  if tempOutfit.aura > 0 then
+  if tempOutfit.attachedAura > 0 then
+    updateAppearanceText("aura", getAttachedOptionName("attachedAuras", tempOutfit.attachedAura))
+  elseif tempOutfit.aura > 0 then
     showAuraCheck:setChecked(true)
     previewFamiliar:setOutfit({type = tempOutfit.aura})
   else
@@ -1102,29 +1299,49 @@ end
 
 function updateAppearanceTexts(outfit)
   for key, value in pairs(outfit) do
-    local newKey = key
-    local appKey = key
-    if key == "type" then
-      newKey = "outfits"
-      appKey = "outfit"
-    else
-      newKey = key .. "s"
-      appKey = key
-    end
+    if key ~= "attachedWing" and key ~= "attachedAura" and key ~= "attachedEffect" then
+      local newKey = key
+      local appKey = key
+      if key == "type" then
+        newKey = "outfits"
+        appKey = "outfit"
+      else
+        newKey = key .. "s"
+        appKey = key
+      end
 
-    local dataTable = ServerData[newKey]
-    if dataTable then
-      for _, data in ipairs(dataTable) do
-        if outfit[key] == data[1] or outfit[key] == data[2] then
-          updateAppearanceText(appKey, data[2])
-        elseif data[4] and not tonumber(data[4]) then
-          updateAppearanceText(appKey, data[4])
-        elseif appKey == "aura" and outfit[key] ~= 0 then
-          updateAppearanceText(appKey, data[4])
+      local dataTable = ServerData[newKey]
+      if dataTable then
+        for _, data in ipairs(dataTable) do
+          if outfit[key] == data[1] or outfit[key] == data[2] then
+            updateAppearanceText(appKey, data[2])
+          elseif data[4] and not tonumber(data[4]) then
+            updateAppearanceText(appKey, data[4])
+          elseif appKey == "aura" and outfit[key] ~= 0 then
+            updateAppearanceText(appKey, data[4])
+          end
         end
       end
     end
   end
+  if g_game.getFeature(GameAttachedEffectOutfit) then
+    updateAppearanceText("wings", getAttachedOptionName("attachedWings", outfit.attachedWing))
+    updateAppearanceText("aura", getAttachedOptionName("attachedAuras", outfit.attachedAura))
+    updateAppearanceText("effects", getAttachedOptionName("attachedVisualEffects", outfit.attachedEffect))
+  end
+  if g_game.getFeature(GameOutfitShaders) then
+    updateAppearanceText("shader", getAttachedOptionName("shaders", outfit.shader))
+  end
+end
+
+function getAttachedOptionName(listName, value)
+  if value == nil or value == "" or tonumber(value) == 0 then return tr("None") end
+  for _, option in ipairs(ServerData[listName] or {}) do
+    if tostring(option[1]) == tostring(value) or tostring(option[2]) == tostring(value) then
+      return tostring(option[2] or option[1])
+    end
+  end
+  return tr("None")
 end
 
 function onAddonChange(widget, checked)
@@ -1251,9 +1468,16 @@ function updatePreview(onlyMount)
   end
 
   if showAuraCheck and showAuraCheck:isChecked() then
-    previewOutfit.aura = ServerData.currentOutfit.aura
-    previewOutfit.auraCategory = ServerData.currentOutfit.auraCategory
-    previewOutfit.auraId = ServerData.currentOutfit.auraId
+    if g_game.getFeature(GameAttachedEffectOutfit) and #ServerData.attachedAuras > 0 then
+      previewOutfit.attachedAura = tempOutfit.attachedAura or 0
+      previewOutfit.aura = 0
+      previewOutfit.auraCategory = 0
+      previewOutfit.auraId = 0
+    else
+      previewOutfit.aura = ServerData.currentOutfit.aura
+      previewOutfit.auraCategory = ServerData.currentOutfit.auraCategory
+      previewOutfit.auraId = ServerData.currentOutfit.auraId
+    end
     if previewCreature then
       previewCreature:setIdleAnimate(true)
       previewCreature:setAnimate(false)
@@ -1262,9 +1486,13 @@ function updatePreview(onlyMount)
       showMountCheck:setChecked(false)
     end
   else
-    previewOutfit.aura = 0
-    previewOutfit.auraCategory = 0
-    previewOutfit.auraId = 0
+    if g_game.getFeature(GameAttachedEffectOutfit) and #ServerData.attachedAuras > 0 then
+      previewOutfit.attachedAura = 0
+    else
+      previewOutfit.aura = 0
+      previewOutfit.auraCategory = 0
+      previewOutfit.auraId = 0
+    end
   end
 
   if onlyMount and previewCreature then
@@ -1278,6 +1506,27 @@ function updatePreview(onlyMount)
 
   if previewCreature then
     previewCreature:setDirection(direction)
+    local previewCreatureObject = previewCreature:getCreature()
+    -- Preview refresh clears attachments without Lua detach callbacks. Wings
+    -- can add a creature bounce in onAttach, so clear that preview-only state
+    -- before rebuilding the selected attachments (their onAttach restores it).
+    if previewCreatureObject and previewCreatureObject.setBounce then
+      previewCreatureObject:setBounce(0, 0, 0)
+    end
+    if previewCreatureObject and previewCreatureObject.clearAttachedEffects then
+      previewCreatureObject:clearAttachedEffects(true)
+    end
+    if g_game.getFeature(GameAttachedEffectOutfit) then
+      for _, effectId in ipairs({previewOutfit.attachedWing or 0, previewOutfit.attachedAura or 0,
+                                 previewOutfit.attachedEffect or 0}) do
+        if effectId > 0 then
+          local effect = g_attachedEffects.getById(effectId)
+          if effect and previewCreatureObject and previewCreatureObject.attachEffect then
+            previewCreatureObject:attachEffect(effect)
+          end
+        end
+      end
+    end
   end
 
   if movementCheck and previewCreature then
@@ -1395,7 +1644,11 @@ function getPresetOutfit(data)
     mountHead = data["mount"]["color"]["head"],
     mountLegs = data["mount"]["color"]["legs"],
     mountFeet = data["mount"]["color"]["detail"],
-    familiar = data["summon"]["id"]
+    familiar = data["summon"]["id"],
+    attachedWing = tonumber(data["outfit"]["attachedWing"]) or 0,
+    attachedAura = tonumber(data["outfit"]["attachedAura"]) or 0,
+    attachedEffect = tonumber(data["outfit"]["attachedEffect"]) or 0,
+    shader = tostring(data["outfit"]["shader"] or "")
   }
 
   return outfit
@@ -1423,7 +1676,7 @@ function accept()
       tempOutfit.mount = 0;
     end
 
-    local isAuraChecked = window.configure.aura.auraCheck:isChecked()
+    local isAuraChecked = configure.aura.auraCheck:isChecked()
     if not isAuraChecked then
       tempOutfit.auraId = 0
     else

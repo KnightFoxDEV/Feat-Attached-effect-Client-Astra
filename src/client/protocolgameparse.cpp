@@ -704,6 +704,9 @@ void ProtocolGame::parseMessage(const InputMessagePtr& msg)
             case Proto::GameServerDetachEffect:
                 parseDetachEffect(msg);
                 break;
+            case Proto::GameServerCreatureShader:
+                parseCreatureShader(msg);
+                break;
             case Proto::GameServerChangeMapAwareRange:
                 parseChangeMapAwareRange(msg);
                 break;
@@ -2780,6 +2783,23 @@ void ProtocolGame::parseOpenOutfitWindow(const InputMessagePtr& msg)
     if (g_game.getFeature(Otc::GamePlayerFamiliars)) {
         currentOutfit.setFamiliar(msg->getU16());
     }
+    std::vector<std::tuple<int, std::string>> attachedWingList, attachedAuraList, attachedVisualEffectList;
+    if (g_game.getFeature(Otc::GameAttachedEffectOutfit)) {
+        currentOutfit.setAttachedWing(msg->getU16());
+        currentOutfit.setAttachedAura(msg->getU16());
+        currentOutfit.setAttachedEffect(msg->getU16());
+        auto readEffectOptions = [&msg](auto& list) {
+            const int count = msg->getU8();
+            for (int i = 0; i < count; ++i) {
+                const int effectId = msg->getU16();
+                const std::string name = msg->getString();
+                list.emplace_back(effectId, name);
+            }
+        };
+        readEffectOptions(attachedWingList);
+        readEffectOptions(attachedAuraList);
+        readEffectOptions(attachedVisualEffectList);
+    }
     std::vector<std::tuple<int, std::string, int, int, int> > outfitList;
 
     if (g_game.getFeature(Otc::GameNewOutfitProtocol)) {
@@ -2943,7 +2963,9 @@ void ProtocolGame::parseOpenOutfitWindow(const InputMessagePtr& msg)
         msg->getU8(); // mounted?
     }
 
-    g_game.processOpenOutfitWindow(currentOutfit, outfitList, mountList, familiarList, wingList, auraList, shaderList, healthBarList, manaBarList);
+    g_game.processOpenOutfitWindow(currentOutfit, outfitList, mountList, familiarList, wingList, auraList,
+                                   attachedWingList, attachedAuraList, attachedVisualEffectList,
+                                   shaderList, healthBarList, manaBarList);
 }
 
 void ProtocolGame::parseVipAdd(const InputMessagePtr& msg)
@@ -4517,6 +4539,21 @@ void ProtocolGame::parseDetachEffect(const InputMessagePtr& msg)
     const uint16_t effectId = msg->getU16();
     if (const auto creature = g_map.getCreatureById(creatureId))
         creature->detachEffectById(effectId);
+}
+
+void ProtocolGame::parseCreatureShader(const InputMessagePtr& msg)
+{
+    const uint32_t creatureId = msg->getU32();
+    const std::string shaderName = msg->getString();
+    const CreaturePtr creature = g_map.getCreatureById(creatureId);
+    if (!creature)
+        return;
+
+    // Match the Mehah shader update packet and route it through setOutfit so
+    // attached effects receive the shader change through onOutfitChange.
+    Outfit outfit = creature->getOutfit();
+    outfit.setShader(shaderName);
+    creature->setOutfit(outfit);
 }
 
 void ProtocolGame::parseChangeMapAwareRange(const InputMessagePtr& msg)

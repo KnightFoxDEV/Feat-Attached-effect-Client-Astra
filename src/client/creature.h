@@ -158,6 +158,7 @@ public:
     virtual void walk(const Position& oldPos, const Position& newPos);
     virtual void stopWalk();
     void allowAppearWalk(uint16_t stepSpeed) { m_allowAppearWalk = true; m_stepDuration = stepSpeed; }
+    void setBounce(float minimum, float height, uint32_t period);
 
     bool isWalking() { return m_walking; }
     bool isRemoved() { return m_removed; }
@@ -304,6 +305,10 @@ protected:
     float m_jumpDuration = 0;
     PointF m_jumpOffset;
     Timer m_jumpTimer;
+    float m_bounceMinimum = 0;
+    float m_bounceHeight = 0;
+    uint32_t m_bounceSpeed = 0;
+    Timer m_bounceTimer;
 
     // for bot
     StaticTextPtr m_text;

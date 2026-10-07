@@ -372,7 +372,11 @@ void AttachedEffect::draw(const Point& originalDest, const Point& movingDest, Ot
             const int localPhase = m_sourceAnimator ? m_sourceAnimator->getPhaseAtElapsed(animationTicks, 0)
                 : static_cast<int>((animationTicks / m_phaseTicks) % m_phaseCount);
             const int phase = m_phaseOffset + std::clamp(localPhase, 0, m_phaseCount - 1);
-            Point point = anchor - control.offset * g_sprites.getOffsetFactor();
+            // Mehah applies pulse to both the effect size and its offset from
+            // the creature. Keep the effect anchored to the creature while it
+            // grows instead of expanding from its top-left corner.
+            const float pulse = 1.f + oscillate(m_config.pulse, elapsed()) / 100.f;
+            Point point = anchor - control.offset * (g_sprites.getOffsetFactor() * pulse);
             if (!m_config.moveDelta.isNull() && !ui) {
                 const double effectLifetime = lifetime();
                 const double movementDuration = m_config.duration ? m_config.duration
@@ -414,7 +418,6 @@ void AttachedEffect::draw(const Point& originalDest, const Point& movingDest, Ot
                 scaleX = static_cast<float>(m_config.size.width()) / naturalSize.width();
                 scaleY = static_cast<float>(m_config.size.height()) / naturalSize.height();
             }
-            const float pulse = 1.f + oscillate(m_config.pulse, time) / 100.f;
             float opacity = m_config.opacity;
             if (m_config.fade.period) {
                 const double f = std::fmod(time, m_config.fade.period) / m_config.fade.period;
