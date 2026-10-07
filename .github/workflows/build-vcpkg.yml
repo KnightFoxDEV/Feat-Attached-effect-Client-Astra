@@ -54,7 +54,7 @@ jobs:
         shell: bash
 
       - name: Restore vcpkg binary cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@v6.1.0
         with:
           path: ${{ github.workspace }}/vcpkg_cache
           key: vcpkg-bincache-${{ hashFiles('vcpkg.json') }}-${{ github.run_id }}
@@ -70,7 +70,7 @@ jobs:
         shell: bash
 
       - name: Restore sccache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@v6.1.0
         with:
           path: ${{ github.workspace }}/sccache
           key: sccache-windows-${{ github.run_id }}
@@ -93,14 +93,14 @@ jobs:
       # entao a proxima run as restaura e pula direto pro compile (~20min -> ~minutos).
       - name: Save vcpkg binary cache
         if: always()
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@v6.1.0
         with:
           path: ${{ github.workspace }}/vcpkg_cache
           key: vcpkg-bincache-${{ hashFiles('vcpkg.json') }}-${{ github.run_id }}
 
       - name: Save sccache
         if: always()
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@v6.1.0
         with:
           path: ${{ github.workspace }}/sccache
           key: sccache-windows-${{ github.run_id }}
@@ -150,7 +150,7 @@ jobs:
         run: mkdir -p "${{ github.workspace }}/vcpkg_cache"
 
       - name: Restore vcpkg binary cache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@v6.1.0
         with:
           path: ${{ github.workspace }}/vcpkg_cache
           key: vcpkg-bincache-linux-${{ hashFiles('vcpkg.json') }}-${{ github.run_id }}
@@ -165,7 +165,7 @@ jobs:
         run: mkdir -p "${{ github.workspace }}/sccache"
 
       - name: Restore sccache
-        uses: actions/cache/restore@v6
+        uses: actions/cache/restore@v6.1.0
         with:
           path: ${{ github.workspace }}/sccache
           key: sccache-linux-${{ github.run_id }}
@@ -185,14 +185,14 @@ jobs:
 
       - name: Save vcpkg binary cache
         if: always()
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@v6.1.0
         with:
           path: ${{ github.workspace }}/vcpkg_cache
           key: vcpkg-bincache-linux-${{ hashFiles('vcpkg.json') }}-${{ github.run_id }}
 
       - name: Save sccache
         if: always()
-        uses: actions/cache/save@v6
+        uses: actions/cache/save@v6.1.0
         with:
           path: ${{ github.workspace }}/sccache
           key: sccache-linux-${{ github.run_id }}
