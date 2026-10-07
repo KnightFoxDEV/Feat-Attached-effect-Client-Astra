@@ -44,7 +44,7 @@ jobs:
       SCCACHE_GHA_ENABLED: "false"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Get latest CMake
         uses: lukka/get-cmake@v4.3.2
@@ -131,7 +131,7 @@ jobs:
       SCCACHE_GHA_ENABLED: "false"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Get latest CMake
         uses: lukka/get-cmake@v4.3.2
